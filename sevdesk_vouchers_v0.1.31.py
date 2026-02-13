@@ -12,7 +12,7 @@ from openpyxl.styles import Font, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
 # Versioning
-__version__ = "0.1.30"
+__version__ = "0.1.31"
 
 # UTF-8 Encoding für Windows-Konsole erzwingen
 if sys.platform == 'win32':
@@ -136,98 +136,121 @@ def fetch_vouchers(session, voucher_type, verify_ssl=True, debug=False):
         print(f"[ERROR] Fehler beim Abrufen der Voucher Daten: {e}")
         return []
 
-def fetch_tags_for_voucher(session, voucher_id, verify_ssl=True, debug=False):
-    """Ruft die Tags für einen Voucher ab.
-    
-    API-Endpoint: GET https://api.sevdesk.de/api/v1/Tag?objectName=Voucher&objectId={voucherId}
-    
-    Args:
-        session: requests Session mit Auth-Header
-        voucher_id: ID des Vouchers
-        verify_ssl: SSL-Verifizierung
-        debug: Debug-Modus
-    
-    Returns:
-        list: Liste von Tag-Namen (z.B. ["EXPORT_2025_Q4", "EXPORT_2025_Q3"])
-              Bei Fehler: leere Liste
-    """
-    url = "https://my.sevdesk.de/api/v1/Tag"
-    params = {
-        "objectName": "Voucher",
-        "objectId": voucher_id
-    }
-    
-    if debug:
-        print(f"[debug] Tag Request: {url} with params {params}")
-    
-    try:
-        response = session.get(url, params=params, verify=verify_ssl, timeout=30)
-        response.raise_for_status()
-        
-        data = response.json()
-        tags = data.get('objects', [])
-        
-        # Extrahiere Tag-Namen
-        tag_names = []
-        for tag in tags:
-            if isinstance(tag, dict) and 'name' in tag:
-                tag_names.append(tag['name'])
-        
-        if debug and tag_names:
-            print(f"[debug] Voucher {voucher_id} has tags: {tag_names}")
-        
-        return tag_names
-        
-    except requests.exceptions.HTTPError as e:
-        if debug:
-            print(f"[debug] HTTP Error fetching tags for voucher {voucher_id}: {e}")
-        return []
-    except requests.exceptions.Timeout:
-        if debug:
-            print(f"[debug] Timeout fetching tags for voucher {voucher_id}")
-        return []
-    except Exception as e:
-        if debug:
-            print(f"[debug] Error fetching tags for voucher {voucher_id}: {e}")
-        return []
-
 def fetch_tags_for_all_vouchers(session, vouchers, verify_ssl=True, debug=False):
-    """Ruft Tags für alle Vouchers ab und speichert sie im Voucher-Objekt.
-    
+    """Ruft Tags für alle Vouchers ab über die TagRelation API.
+
+    BUG-FIX v0.1.31: Verwendet GET /TagRelation statt GET /Tag, da
+    GET /Tag?objectName=Voucher&objectId={id} die objectId-Filterung
+    NICHT korrekt umsetzt. Der Endpoint gibt Tags für ALLE Vouchers
+    zurück, nicht nur für den angefragten — dadurch wurden Expense-Vouchers
+    fälschlicherweise als bereits getaggt erkannt, wenn zuvor ein
+    Income-Export-Tag existierte.
+
+    GET /TagRelation gibt die exakten Zuordnungen (Tag ↔ Voucher) zurück,
+    sodass nur tatsächlich getaggte Vouchers erkannt werden.
+
     Args:
         session: requests Session mit Auth-Header
         vouchers: Liste von Voucher-Objekten (aus fetch_vouchers)
         verify_ssl: SSL-Verifizierung
         debug: Debug-Modus
-    
+
     Returns:
         dict: Mapping von voucher_id zu Liste von Tag-Namen
     """
     if not vouchers:
         return {}
-    
+
     total = len(vouchers)
-    print(f"\n[info] Fetching tags for {total} vouchers...")
-    
+
+    # Mapping von str(id) → original id (für konsistente Schlüssel)
+    id_map = {}
+    for v in vouchers:
+        vid = v.get('id')
+        if vid is not None:
+            id_map[str(vid)] = vid
+
+    print(f"\n[info] Fetching tags for {total} vouchers via TagRelation API (v0.1.31)...")
+
+    # Schritt 1: Alle Tags abrufen (für ID → Name Mapping)
+    tag_names_by_id = {}
+    try:
+        tag_url = "https://my.sevdesk.de/api/v1/Tag"
+        tag_params = {"limit": 9999}
+        if debug:
+            print(f"[debug] Fetching all tags: GET {tag_url}")
+        resp = session.get(tag_url, params=tag_params, verify=verify_ssl, timeout=30)
+        resp.raise_for_status()
+        all_tags = resp.json().get('objects', [])
+        for tag in all_tags:
+            tid = str(tag.get('id', ''))
+            tname = tag.get('name', '')
+            if tid and tname:
+                tag_names_by_id[tid] = tname
+        if debug:
+            print(f"[debug] Found {len(tag_names_by_id)} tags in system: {list(tag_names_by_id.values())[:10]}")
+    except Exception as e:
+        print(f"[WARNING] Konnte Tags nicht abrufen: {e}")
+
+    # Schritt 2: Alle TagRelations abrufen (exakte Zuordnungen Tag ↔ Objekt)
     tags_map = {}
-    
-    for idx, voucher in enumerate(vouchers, 1):
-        voucher_id = voucher.get('id')
-        if not voucher_id:
-            continue
-        
-        print(f"  Fetching tags for voucher {idx}/{total}...", end="\r")
-        
-        tags = fetch_tags_for_voucher(session, voucher_id, verify_ssl=verify_ssl, debug=debug)
-        tags_map[voucher_id] = tags
-    
-    # Zeilenende nach Progress
-    print(f"  Fetching tags for voucher {total}/{total}... done")
-    
+    try:
+        rel_url = "https://my.sevdesk.de/api/v1/TagRelation"
+        rel_params = {"limit": 9999}
+        if debug:
+            print(f"[debug] Fetching tag relations: GET {rel_url}")
+        resp = session.get(rel_url, params=rel_params, verify=verify_ssl, timeout=30)
+        resp.raise_for_status()
+        relations = resp.json().get('objects', [])
+        if debug:
+            print(f"[debug] Found {len(relations)} total tag relations in system")
+
+        matched_count = 0
+        for rel in relations:
+            obj = rel.get('object', {})
+            if obj.get('objectName') != 'Voucher':
+                continue
+
+            obj_id_str = str(obj.get('id', ''))
+            if obj_id_str not in id_map:
+                continue
+
+            original_id = id_map[obj_id_str]
+
+            # Tag-Name ermitteln: erst aus Relation, dann aus Tag-Map
+            tag_info = rel.get('tag', {})
+            tag_name = tag_info.get('name', '')
+            if not tag_name:
+                tag_id = str(tag_info.get('id', ''))
+                tag_name = tag_names_by_id.get(tag_id, f'Tag#{tag_id}')
+
+            if original_id not in tags_map:
+                tags_map[original_id] = []
+            if tag_name and tag_name not in tags_map[original_id]:
+                tags_map[original_id].append(tag_name)
+                matched_count += 1
+
+        if debug:
+            print(f"[debug] Matched {matched_count} tag relations to requested vouchers")
+
+    except Exception as e:
+        print(f"[WARNING] Konnte TagRelations nicht abrufen: {e}")
+        print(f"[WARNING] Alle Vouchers werden als ungetaggt behandelt")
+
+    # Fehlende Voucher-IDs mit leeren Listen auffüllen
+    for vid in id_map.values():
+        if vid not in tags_map:
+            tags_map[vid] = []
+
     # Zusammenfassung
     vouchers_with_tags = sum(1 for tags in tags_map.values() if tags)
-    print(f"[info] Found {vouchers_with_tags} vouchers with existing tags")
-    
+    print(f"[info] Found {vouchers_with_tags} vouchers with existing tags (via TagRelation)")
+
+    if debug:
+        for vid, tags in tags_map.items():
+            if tags:
+                print(f"[debug] Voucher {vid} has tags: {tags}")
+
     return tags_map
 
 def format_currency(amount, currency='EUR'):
