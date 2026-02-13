@@ -7,6 +7,32 @@
 - **Language**: Python 3
 - **Entry point**: `sevdesk_vouchers_v0.1.30.py`
 - **Architecture**: Single-file script, functional style (no classes), 13 functions + `main()`
+- **API spec**: `openapi.yaml` — full sevDesk OpenAPI 3.0 specification (17k lines)
+
+## Business Context & Purpose
+
+The script supports an **incremental export workflow** for a German accounting practice:
+
+1. There are two distinct export categories that are run **separately** with completely different documents:
+   - **Income** (`--type income`) — Ausgangsrechnungen (outgoing invoices, sales)
+   - **Expense** (`--type expense`) — Eingangsrechnungen (incoming invoices, purchases)
+
+2. Vouchers are selected through a **complex date-based filtering** pipeline (invoice date + delivery date ranges).
+
+3. After a successful export, the script **tags each exported voucher** in sevDesk with the `--exportTag` value. On subsequent runs, already-tagged vouchers are excluded — enabling **incremental exports** (only new/unprocessed vouchers get exported).
+
+### Known Critical Bug (reason for v0.1.30)
+
+**Problem**: When running an income export with tag `incomeEXPORT_2025_DEZEMBER_01`, **expense vouchers were also getting tagged** with that income tag. This is a data corruption issue — expense vouchers become incorrectly marked as already exported under an income tag.
+
+**Root cause**: The sevDesk API's `creditDebit` filter was not reliably filtering server-side. Vouchers with the wrong `creditDebit` value leaked through, and the tagging function did not validate the voucher type before applying the tag.
+
+**Fix in v0.1.30**:
+- `tag_vouchers_in_sevdesk()` now takes `expected_credit_debit` parameter and **skips** vouchers whose `creditDebit` doesn't match (line 324)
+- `creditDebit` is stored in the voucher data dict so it's available at tagging time (line 718)
+- Local safety-net filter in `main()` removes wrong-type vouchers after API fetch (line 651)
+
+**This bug may not be fully resolved** — the local filtering is a workaround. The API itself may still return mixed results.
 
 ## Running the Script
 
@@ -70,16 +96,46 @@ Results are split into two categories:
 - **Volltreffer** (matches) — passed all 3 stages, will be tagged and have PDFs downloaded
 - **Abgelehnt** (rejected) — failed stage 2 or 3
 
-### sevDesk API
+## sevDesk API Reference
 
-- Base URL: `https://my.sevdesk.de/api/v1/`
-- Key endpoints:
-  - `GET /Voucher` — fetch vouchers (with `creditDebit` filter: `D`=income, `C`=expense)
-  - `GET /Tag` — fetch tags for a voucher
-  - `POST /Tag/Factory/create` — create a tag on a voucher
-  - `GET /Voucher/{id}/downloadDocument` — download PDF (returns base64-encoded content)
-- Auth: `Authorization` header with API token
+Full API spec: `openapi.yaml` (OpenAPI 3.0)
+
+- **Base URL**: `https://my.sevdesk.de/api/v1/`
+- **Auth**: `Authorization` header with API token
 - All requests use a persistent `requests.Session()`
+
+### creditDebit Mapping (CRITICAL)
+
+This mapping is **unintuitive** and the source of the cross-tagging bug:
+
+| `creditDebit` value | Accounting term | German term | `--type` value | Meaning |
+|---|---|---|---|---|
+| `D` (Debit) | Money IN | Ausgangsrechnungen | `income` | You **sold** something |
+| `C` (Credit) | Money OUT | Eingangsrechnungen | `expense` | You **bought** something |
+
+The API's `creditDebit` query parameter is an enum `[C, D]` (see `openapi.yaml` VoucherModel, line ~16405). **The API filter is unreliable** — the script must filter locally as a safety net.
+
+### Endpoints Used
+
+#### `GET /Voucher` — Fetch vouchers
+- **Params**: `limit` (int, default 1000), `creditDebit` (C|D), `embed` (e.g. `taxRule,supplier`), `startDate`, `endDate`
+- **Response**: `{ "objects": [ VoucherResponse, ... ] }`
+- Key VoucherResponse fields: `id`, `voucherDate`, `deliveryDate`, `creditDebit`, `sumGross`, `description`, `voucherNumber`, `supplier` (embedded object), `currency`
+- **Caution**: API may return vouchers with wrong `creditDebit` despite the filter parameter
+
+#### `GET /Tag` — Fetch tags for a voucher
+- **Params**: `objectName=Voucher`, `objectId={voucherId}`
+- **Response**: `{ "objects": [ { "id", "name", "objectName": "Tag", ... } ] }`
+- Used to check if a voucher was already exported (has any tag)
+
+#### `POST /Tag/Factory/create` — Create tag on voucher
+- **Body**: `{ "name": "TAG_NAME", "object": { "id": voucherId, "objectName": "Voucher" } }`
+- **Response**: Returns a `TagRelation` object (not just a Tag) linking the tag to the voucher
+- **This is where the cross-tagging bug manifests** — must validate `creditDebit` before calling
+
+#### `GET /Voucher/{voucherId}/downloadDocument` — Download PDF
+- **Response**: JSON with `{ "objects": { "content": "base64...", "base64Encoded": true } }` or direct binary PDF
+- Script handles both formats; timeout set to 60s for large documents
 
 ### Output Structure
 
