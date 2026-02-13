@@ -2,11 +2,11 @@
 
 ## Project Overview
 
-**sevDesk Extrakt** is a single-file Python CLI utility (v0.1.30) that extracts voucher data from the [sevDesk](https://sevdesk.de) accounting API, generates Excel reports, downloads PDF documents, and tags processed vouchers in sevDesk for tracking.
+**sevDesk Extrakt** is a single-file Python CLI utility (v0.1.31) that extracts voucher data from the [sevDesk](https://sevdesk.de) accounting API, generates Excel reports, downloads PDF documents, and tags processed vouchers in sevDesk for tracking.
 
 - **Language**: Python 3
-- **Entry point**: `sevdesk_vouchers_v0.1.30.py`
-- **Architecture**: Single-file script, functional style (no classes), 13 functions + `main()`
+- **Entry point**: `sevdesk_vouchers_v0.1.31.py`
+- **Architecture**: Single-file script, functional style (no classes), 12 functions + `main()`
 - **API spec**: `openapi.yaml` — full sevDesk OpenAPI 3.0 specification (17k lines)
 
 ## Business Context & Purpose
@@ -28,16 +28,27 @@ The script supports an **incremental export workflow** for a German accounting p
 **Root cause**: The sevDesk API's `creditDebit` filter was not reliably filtering server-side. Vouchers with the wrong `creditDebit` value leaked through, and the tagging function did not validate the voucher type before applying the tag.
 
 **Fix in v0.1.30**:
-- `tag_vouchers_in_sevdesk()` now takes `expected_credit_debit` parameter and **skips** vouchers whose `creditDebit` doesn't match (line 324)
-- `creditDebit` is stored in the voucher data dict so it's available at tagging time (line 718)
-- Local safety-net filter in `main()` removes wrong-type vouchers after API fetch (line 651)
+- `tag_vouchers_in_sevdesk()` now takes `expected_credit_debit` parameter and **skips** vouchers whose `creditDebit` doesn't match
+- `creditDebit` is stored in the voucher data dict so it's available at tagging time
+- Local safety-net filter in `main()` removes wrong-type vouchers after API fetch
 
-**This bug may not be fully resolved** — the local filtering is a workaround. The API itself may still return mixed results.
+### Known Critical Bug (reason for v0.1.31)
+
+**Problem**: After running income export (step 1), expense export (step 2) reports ALL expense vouchers as "already tagged" with the income tag `incomeEXPORT_2025_DEZEMBER_01` and exports 0 Volltreffer. Expense vouchers are never exported.
+
+**Root cause**: `GET /Tag?objectName=Voucher&objectId={id}` does NOT filter by `objectId`. The `objectName` and `objectId` parameters are **undocumented** (the official OpenAPI spec only defines `id` and `name` as parameters for `GET /Tag`). After the income export creates a tag on 9 income vouchers, `GET /Tag?objectName=Voucher&objectId={any_id}` returns that tag for ALL vouchers — it returns all tags associated with the Voucher object type globally, not for the specific voucher.
+
+**Fix in v0.1.31**:
+- Replaced `GET /Tag` (per-voucher, N API calls, buggy objectId filter) with `GET /TagRelation` (single API call, exact voucher↔tag mapping)
+- `GET /TagRelation` returns `Model_TagCreateResponse` objects with `tag.id` AND `object.id`, allowing proper per-voucher tag resolution
+- Removed `fetch_tags_for_voucher()` (the buggy per-voucher function)
+- `fetch_tags_for_all_vouchers()` now uses two API calls: `GET /Tag` (id→name map) + `GET /TagRelation` (exact assignments)
+- Performance improvement: 2 API calls total instead of N (one per voucher)
 
 ## Running the Script
 
 ```bash
-python sevdesk_vouchers_v0.1.30.py \
+python sevdesk_vouchers_v0.1.31.py \
   --begin DD.MM.YYYY \
   --end DD.MM.YYYY \
   --endRechnungsdatum DD.MM.YYYY \
@@ -64,25 +75,24 @@ Standard library modules used: `argparse`, `datetime`, `sys`, `urllib3`, `os`, `
 
 ## Codebase Structure
 
-The entire application lives in a single file: `sevdesk_vouchers_v0.1.30.py` (864 lines).
+The entire application lives in a single file: `sevdesk_vouchers_v0.1.31.py`.
 
 ### Function Map
 
-| Function | Lines | Purpose |
-|---|---|---|
-| `parse_date()` | 23–38 | Parse dates in DD.MM.YYYY or YYYY-MM-DD format |
-| `convert_date_to_dir_format()` | 40–43 | Convert dates for directory names |
-| `fetch_vouchers()` | 45–137 | Fetch vouchers from sevDesk API with creditDebit filtering |
-| `fetch_tags_for_voucher()` | 139–192 | Get tags for a single voucher |
-| `fetch_tags_for_all_vouchers()` | 194–231 | Batch fetch tags for all vouchers |
-| `format_currency()` | 233–235 | Format amount with currency string |
-| `sanitize_filename()` | 237–247 | Clean filenames of invalid characters |
-| `tag_vouchers_in_sevdesk()` | 249–401 | Create tags on vouchers with creditDebit validation (v0.1.30 fix) |
-| `download_voucher_pdf()` | 403–461 | Download a single voucher PDF (base64 or binary) |
-| `download_pdfs_for_vouchers()` | 463–514 | Batch PDF downloading |
-| `create_xlsx_sheet()` | 516–563 | Format and populate an Excel worksheet |
-| `create_output_directory()` | 565–602 | Create output directory structure |
-| `main()` | 604–864 | Orchestrate the full workflow |
+| Function | Purpose |
+|---|---|
+| `parse_date()` | Parse dates in DD.MM.YYYY or YYYY-MM-DD format |
+| `convert_date_to_dir_format()` | Convert dates for directory names |
+| `fetch_vouchers()` | Fetch vouchers from sevDesk API with creditDebit filtering |
+| `fetch_tags_for_all_vouchers()` | Batch fetch tags via TagRelation API (v0.1.31 fix) |
+| `format_currency()` | Format amount with currency string |
+| `sanitize_filename()` | Clean filenames of invalid characters |
+| `tag_vouchers_in_sevdesk()` | Create tags on vouchers with creditDebit validation (v0.1.30 fix) |
+| `download_voucher_pdf()` | Download a single voucher PDF (base64 or binary) |
+| `download_pdfs_for_vouchers()` | Batch PDF downloading |
+| `create_xlsx_sheet()` | Format and populate an Excel worksheet |
+| `create_output_directory()` | Create output directory structure |
+| `main()` | Orchestrate the full workflow |
 
 ### Key Architecture: Three-Stage Filtering Pipeline
 
@@ -123,15 +133,20 @@ The API's `creditDebit` query parameter is an enum `[C, D]` (see `openapi.yaml` 
 - Key VoucherResponse fields: `id`, `voucherDate`, `deliveryDate`, `creditDebit`, `sumGross`, `description`, `voucherNumber`, `supplier` (embedded object), `currency`
 - **Caution**: API may return vouchers with wrong `creditDebit` despite the filter parameter
 
-#### `GET /Tag` — Fetch tags for a voucher
-- **Params**: `objectName=Voucher`, `objectId={voucherId}`
+#### `GET /Tag` — Fetch all tags (name registry)
+- **Official params** (per OpenAPI spec): `id` (number), `name` (string)
 - **Response**: `{ "objects": [ { "id", "name", "objectName": "Tag", ... } ] }`
-- Used to check if a voucher was already exported (has any tag)
+- **WARNING**: `objectName` and `objectId` are NOT official parameters. Using them does NOT filter by specific voucher — it returns all tags globally. This was the root cause of the v0.1.31 bug.
+
+#### `GET /TagRelation` — Fetch tag-to-object assignments (v0.1.31)
+- **Params**: none (returns all relations)
+- **Response**: `{ "objects": [ { "tag": {"id", "objectName": "Tag"}, "object": {"id", "objectName": "Voucher"} } ] }`
+- Used in v0.1.31 to correctly determine which tags are assigned to which specific vouchers
 
 #### `POST /Tag/Factory/create` — Create tag on voucher
 - **Body**: `{ "name": "TAG_NAME", "object": { "id": voucherId, "objectName": "Voucher" } }`
 - **Response**: Returns a `TagRelation` object (not just a Tag) linking the tag to the voucher
-- **This is where the cross-tagging bug manifests** — must validate `creditDebit` before calling
+- Must validate `creditDebit` before calling (v0.1.30 fix)
 
 #### `GET /Voucher/{voucherId}/downloadDocument` — Download PDF
 - **Response**: JSON with `{ "objects": { "content": "base64...", "base64Encoded": true } }` or direct binary PDF
@@ -167,6 +182,7 @@ The Excel file has two worksheets: "Volltreffer" and "Abgelehnt", each with 8 co
 
 - **v0.1.29**: Improved API filtering and debug outputs for creditDebit values
 - **v0.1.30**: Added `creditDebit` validation before tagging to prevent incorrect classification; stores `creditDebit` in voucher data dict; skips vouchers with wrong type during tagging
+- **v0.1.31**: Fixed expense export showing 0 Volltreffer due to buggy `GET /Tag` endpoint; replaced per-voucher `GET /Tag?objectId=` (undocumented, broken filter) with `GET /TagRelation` (exact voucher↔tag mapping); removed `fetch_tags_for_voucher()` function; also a performance improvement (2 API calls instead of N)
 
 ## Development Notes
 
