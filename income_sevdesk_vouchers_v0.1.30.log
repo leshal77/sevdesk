@@ -1,0 +1,187 @@
+============================================================
+sevDesk Extrakt v0.1.30
+============================================================
+Requested type: income
+  → API filter: creditDebit=D
+  → Expected: Ausgangsrechnungen (Debit)
+============================================================
+
+[info] API Request URL: https://my.sevdesk.de/api/v1/Voucher
+[info] API Parameters:
+       - limit: 1000
+       - creditDebit: D (income/Ausgangsrechnungen (Debit))
+[debug] Full params dict: {'limit': 1000, 'embed': 'taxRule,supplier', 'creditDebit': 'D'}
+[info] Actual request URL: https://my.sevdesk.de/api/v1/Voucher?limit=1000&embed=taxRule%2Csupplier&creditDebit=D
+[info] API returned 51 vouchers
+
+[info] creditDebit distribution in API response:
+       - D: 51 vouchers (income/Ausgangsrechnungen)
+
+[info] Sample of first 3 vouchers:
+       1. ID=134849694, voucherNumber=None, creditDebit=D, voucherDate=2026-01-15
+       2. ID=134845599, voucherNumber=None, creditDebit=D, voucherDate=2026-01-15
+       3. ID=134575147, voucherNumber=None, creditDebit=D, voucherDate=2026-01-13
+
+[info] Processing 51 vouchers of type 'income' (creditDebit=D)
+
+[info] Fetching tags for 51 vouchers...
+  Fetching tags for voucher 1/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '134849694'}
+  Fetching tags for voucher 2/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '134845599'}
+  Fetching tags for voucher 3/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '134575147'}
+  Fetching tags for voucher 4/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '134454736'}
+  Fetching tags for voucher 5/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '133971277'}
+  Fetching tags for voucher 6/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '133850801'}
+  Fetching tags for voucher 7/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '133850730'}
+  Fetching tags for voucher 8/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '133850675'}
+  Fetching tags for voucher 9/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '133850593'}
+  Fetching tags for voucher 10/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '133850592'}
+  Fetching tags for voucher 11/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '132720111'}
+  Fetching tags for voucher 12/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '132720097'}
+  Fetching tags for voucher 13/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '132720113'}
+  Fetching tags for voucher 14/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '132720131'}
+  Fetching tags for voucher 15/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '132720223'}
+  Fetching tags for voucher 16/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '132720221'}
+  Fetching tags for voucher 17/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '132720205'}
+  Fetching tags for voucher 18/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '132720180'}
+  Fetching tags for voucher 19/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '132720168'}
+  Fetching tags for voucher 20/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '130302115'}
+  Fetching tags for voucher 21/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '132719940'}
+  Fetching tags for voucher 22/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '129931159'}
+  Fetching tags for voucher 23/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '129931172'}
+  Fetching tags for voucher 24/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '129931152'}
+  Fetching tags for voucher 25/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '129931179'}
+  Fetching tags for voucher 26/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '129931166'}
+  Fetching tags for voucher 27/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '129931155'}
+  Fetching tags for voucher 28/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '130413904'}
+  Fetching tags for voucher 29/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '129931187'}
+  Fetching tags for voucher 30/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '129931169'}
+  Fetching tags for voucher 31/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '129931160'}
+  Fetching tags for voucher 32/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '129931156'}
+  Fetching tags for voucher 33/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '130413744'}
+  Fetching tags for voucher 34/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '129931171'}
+  Fetching tags for voucher 35/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '129931157'}
+  Fetching tags for voucher 36/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '129931168'}
+  Fetching tags for voucher 37/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '129931170'}
+  Fetching tags for voucher 38/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '129931176'}
+  Fetching tags for voucher 39/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '129931174'}
+  Fetching tags for voucher 40/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '129931165'}
+  Fetching tags for voucher 41/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '129931178'}
+  Fetching tags for voucher 42/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '129931167'}
+  Fetching tags for voucher 43/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '129931164'}
+  Fetching tags for voucher 44/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '130320307'}
+  Fetching tags for voucher 45/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '130319660'}
+  Fetching tags for voucher 46/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '130318771'}
+  Fetching tags for voucher 47/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '130318770'}
+  Fetching tags for voucher 48/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '130318735'}
+  Fetching tags for voucher 49/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '130317279'}
+  Fetching tags for voucher 50/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '130317278'}
+  Fetching tags for voucher 51/51...[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag with params {'objectName': 'Voucher', 'objectId': '130318312'}
+  Fetching tags for voucher 51/51... done
+[info] Found 0 vouchers with existing tags
+[info] Hauptverzeichnis erstellt: incomeEXPORT_2025_DEZEMBER_01/
+[info] Unterverzeichnis erstellt: incomeEXPORT_2025_DEZEMBER_01\Ausgangsrechnungen/
+
+[info] Starte PDF-Download für 9 Belege...
+  Downloading PDF 1/9: 134849694 -> 1.pdf ... [debug] PDF Download Request: https://my.sevdesk.de/api/v1/Voucher/134849694/downloadDocument
+✓
+  Downloading PDF 2/9: 134845599 -> 2.pdf ... [debug] PDF Download Request: https://my.sevdesk.de/api/v1/Voucher/134845599/downloadDocument
+✓
+  Downloading PDF 3/9: 134575147 -> 3.pdf ... [debug] PDF Download Request: https://my.sevdesk.de/api/v1/Voucher/134575147/downloadDocument
+✓
+  Downloading PDF 4/9: 133971277 -> 4.pdf ... [debug] PDF Download Request: https://my.sevdesk.de/api/v1/Voucher/133971277/downloadDocument
+✓
+  Downloading PDF 5/9: 133850801 -> 5.pdf ... [debug] PDF Download Request: https://my.sevdesk.de/api/v1/Voucher/133850801/downloadDocument
+✓
+  Downloading PDF 6/9: 133850730 -> 6.pdf ... [debug] PDF Download Request: https://my.sevdesk.de/api/v1/Voucher/133850730/downloadDocument
+✓
+  Downloading PDF 7/9: 133850675 -> 7.pdf ... [debug] PDF Download Request: https://my.sevdesk.de/api/v1/Voucher/133850675/downloadDocument
+✓
+  Downloading PDF 8/9: 133850593 -> 8.pdf ... [debug] PDF Download Request: https://my.sevdesk.de/api/v1/Voucher/133850593/downloadDocument
+✓
+  Downloading PDF 9/9: 133850592 -> 9.pdf ... [debug] PDF Download Request: https://my.sevdesk.de/api/v1/Voucher/133850592/downloadDocument
+✓
+
+[info] ========== TAGGING DEBUG (v0.1.30) ==========
+[info] Anzahl zu taggender Vouchers: 9
+[info] Tag-Name: 'incomeEXPORT_2025_DEZEMBER_01'
+[info] Erwarteter creditDebit: D
+
+[info] Erste 3 Vouchers zur Validierung:
+       1. ID=134849694, Nr=134849694, creditDebit=D
+       2. ID=134845599, Nr=134845599, creditDebit=D
+       3. ID=134575147, Nr=134575147, creditDebit=D
+
+[info] creditDebit-Verteilung in Volltreffer-Liste:
+       - D: 9 vouchers (income/Ausgangsrechnungen) ✓ KORREKT
+[info] ================================================
+
+[info] Starte Tagging für 9 Belege mit Tag 'incomeEXPORT_2025_DEZEMBER_01'...
+  Tagging 1/9: 134849694 ... 
+[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag/Factory/create
+[debug] Payload: {'name': 'incomeEXPORT_2025_DEZEMBER_01', 'object': {'id': '134849694', 'objectName': 'Voucher'}}
+✓
+  Tagging 2/9: 134845599 ... 
+[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag/Factory/create
+[debug] Payload: {'name': 'incomeEXPORT_2025_DEZEMBER_01', 'object': {'id': '134845599', 'objectName': 'Voucher'}}
+✓
+  Tagging 3/9: 134575147 ... 
+[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag/Factory/create
+[debug] Payload: {'name': 'incomeEXPORT_2025_DEZEMBER_01', 'object': {'id': '134575147', 'objectName': 'Voucher'}}
+✓
+  Tagging 4/9: 133971277 ... 
+[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag/Factory/create
+[debug] Payload: {'name': 'incomeEXPORT_2025_DEZEMBER_01', 'object': {'id': '133971277', 'objectName': 'Voucher'}}
+✓
+  Tagging 5/9: 133850801 ... 
+[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag/Factory/create
+[debug] Payload: {'name': 'incomeEXPORT_2025_DEZEMBER_01', 'object': {'id': '133850801', 'objectName': 'Voucher'}}
+✓
+  Tagging 6/9: 133850730 ... 
+[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag/Factory/create
+[debug] Payload: {'name': 'incomeEXPORT_2025_DEZEMBER_01', 'object': {'id': '133850730', 'objectName': 'Voucher'}}
+✓
+  Tagging 7/9: 133850675 ... 
+[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag/Factory/create
+[debug] Payload: {'name': 'incomeEXPORT_2025_DEZEMBER_01', 'object': {'id': '133850675', 'objectName': 'Voucher'}}
+✓
+  Tagging 8/9: 133850593 ... 
+[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag/Factory/create
+[debug] Payload: {'name': 'incomeEXPORT_2025_DEZEMBER_01', 'object': {'id': '133850593', 'objectName': 'Voucher'}}
+✓
+  Tagging 9/9: 133850592 ... 
+[debug] Tag Request: https://my.sevdesk.de/api/v1/Tag/Factory/create
+[debug] Payload: {'name': 'incomeEXPORT_2025_DEZEMBER_01', 'object': {'id': '133850592', 'objectName': 'Voucher'}}
+✓
+
+[info] Tagging abgeschlossen:
+       - Erfolgreich: 9
+       - Fehlgeschlagen: 0
+       - Übersprungen (falscher creditDebit): 0
+
+============================================================
+ZUSAMMENFASSUNG - sevDesk Extrakt v0.1.30
+============================================================
+Typ: Ausgangsrechnungen (income/D)
+Export-Tag: incomeEXPORT_2025_DEZEMBER_01
+Zeitraum: 01.12.2025 - 31.12.2025
+Rechnungsdatum bis: 12.02.2026
+------------------------------------------------------------
+Vouchers von API abgerufen: 51
+Nach lokaler Filterung: 51
+------------------------------------------------------------
+Volltreffer: 9
+Abgelehnt:   10
+------------------------------------------------------------
+XLSX gespeichert: incomeEXPORT_2025_DEZEMBER_01\Ausgangsrechnungen\ausgangsrechnungen_01-12-2025_31-12-2025.xlsx
+------------------------------------------------------------
+PDF-Downloads (nur Volltreffer):
+  Gesamt: 9
+  Erfolgreich: 9
+  Fehlgeschlagen: 0
+------------------------------------------------------------
+sevDesk-Tagging (nur Volltreffer):
+  Tag: 'incomeEXPORT_2025_DEZEMBER_01'
+  Gesamt: 9
+  Erfolgreich: 9
+  Fehlgeschlagen: 0
+============================================================
